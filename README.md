@@ -24,3 +24,7 @@ File/image uploads and galleries; session live mode; richer project milestones/f
 
 `npm run dev`, `npm run db:generate`, `npm run build`.
 Local D1 needs the generated migrations applied through Wrangler. Sites applies production migrations on deployment. Theme is the only localStorage preference; product data stays in D1.
+
+## Local school timetable
+
+Run the development server, then `python3 scripts/import-school-schedule.py` to apply `templates/school-schedule.json` to the local development account. The template has 42 lesson slots, uses «Основы права» and «Воркаут», and excludes the optional elective. It contains no user identity, teacher names or classroom locations. Existing lessons in matching weekday/time slots are updated; the script also removes the old «9 ЭЛ Олимп М» elective. Other personal records are untouched. Local database files stay outside Git.
