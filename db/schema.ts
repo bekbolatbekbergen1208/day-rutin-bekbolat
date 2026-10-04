@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 const base=()=>({id:text('id').primaryKey(),owner:text('owner').notNull(),title:text('title').notNull(),created:text('created').notNull()});
 export const users=sqliteTable('users',{id:text('id').primaryKey(),name:text('name').notNull(),bio:text('bio'),sleep:text('sleep').notNull().default('22:30'),travel:integer('travel').notNull().default(40),fllTravel:integer('fll_travel').notNull().default(15),competition:text('competition'),onboarded:integer('onboarded').default(0)});
 export const goals=sqliteTable('goals',{...base(),deadline:text('deadline'),horizon:text('horizon').notNull(),why:text('why'),parentId:text('parent_id'),nextAction:text('next_action')});
@@ -18,3 +18,5 @@ export const achievements=sqliteTable('achievements',{...base(),date:text('date'
 export const skills=sqliteTable('skills',{...base(),started:text('started'),stage:text('stage'),evidence:text('evidence')});
 export const reviews=sqliteTable('reviews',{...base(),period:text('period'),progress:text('progress'),attention:text('attention'),focus:text('focus')});
 export const focusSessions=sqliteTable('focus_sessions',{...base(),date:text('date').notNull(),minutes:real('minutes').notNull()});
+
+export const lessonPrep=sqliteTable('lesson_prep',{...base(),date:text('date').notNull(),lessonId:text('lesson_id').notNull().references(()=>lessons.id,{onDelete:'cascade'}),done:integer('done').notNull().default(0),note:text('note').notNull().default('')},t=>[uniqueIndex('lesson_prep_owner_date_lesson').on(t.owner,t.date,t.lessonId)]);
