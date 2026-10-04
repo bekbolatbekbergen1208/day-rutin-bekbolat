@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -22,7 +23,12 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+
+  if (!userId || !email) {
+    const basicUser = await getSelfHostedBasicUser(requestHeaders.get("authorization"));
+    if (basicUser) return basicUser;
+    return null;
+  }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
@@ -87,4 +93,41 @@ function safeDecodeURIComponent(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+
+async function getSelfHostedBasicUser(
+  authorization: string | null,
+): Promise<ChatGPTUser | null> {
+  const expectedHash = (env as any).SELF_HOSTED_AUTH_SHA256 as string | undefined;
+  const expectedUser = ((env as any).SELF_HOSTED_AUTH_USER as string | undefined) ?? "bekbolat";
+  if (!expectedHash || !authorization?.startsWith("Basic ")) return null;
+
+  let decoded = "";
+  try {
+    decoded = Buffer.from(authorization.slice(6), "base64").toString("utf8");
+  } catch {
+    return null;
+  }
+  const separator = decoded.indexOf(":");
+  if (separator < 0) return null;
+  const username = decoded.slice(0, separator);
+  const password = decoded.slice(separator + 1);
+  if (username !== expectedUser) return null;
+
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(password),
+  );
+  const actualHash = Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  if (actualHash !== expectedHash.toLowerCase()) return null;
+
+  return {
+    userId: "bekbolat-selfhosted",
+    displayName: "Bekbolat",
+    email: "bekbolat@local.invalid",
+    fullName: "Bekbolat",
+  };
 }
